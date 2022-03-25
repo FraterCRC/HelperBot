@@ -1,12 +1,12 @@
-from ast import Call
 import asyncio
 from typing import Callable, Dict
-import pytz
 from datetime import datetime
 from datetime import time
 import json
 import pathlib
 import logging
+import sched
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 class timeDispatcher():
     
@@ -26,7 +26,6 @@ class timeDispatcher():
         self.save_users(pathlib.Path("user_data.json"))
       
     def save_users(self, path: pathlib.Path):
-        print(self.users)
         with path.open('w') as f:
             logging.info("time_dispatcher: Saving user data")
             return json.dump(self.users, f, indent=4)
@@ -42,39 +41,29 @@ class timeDispatcher():
                 
     async def start_updating(self):
         self.__is_updating = True
-        await self.__updating()
-        
-    async def send_drug_reminder(self, user, drug_name):
-        await self.bot.send_message(int(user), f"Не забудьте выпить {drug_name}", disable_notification=False)        
+        scheduler = AsyncIOScheduler()
+        scheduler.add_job(self.update_day, trigger = 'cron', hour = 14, minute = 0, second = 0)
+        scheduler.add_job(self.update_morning, trigger = 'cron', hour = 10, minute = 0, second = 0)
+        scheduler.add_job(self.update_evening, trigger = 'cron', hour = 20, minute = 22, second = 0)     
+        scheduler.start()
+                         
+    async def update_day(self):
+        for key in self.users:
+            for value in self.users[key]:
+                if str(value[1]) == "День":
+                    await self.bot.send_message(int(key), f"Не забудьте выпить {value[0]}", disable_notification=False) 
+    
+    async def update_evening(self):
+        for key in self.users:
+            for value in self.users[key]:
+                if str(value[1]) == "Вечер":
+                    await self.bot.send_message(int(key), f"Не забудьте выпить {value[0]}", disable_notification=False) 
             
-    async def __updating(self):
-        print("HERE")
-        while self.__is_updating:
-            timezone = pytz.timezone("Etc/GMT-5")
-            current_time = datetime.now(timezone)
-            
-            if current_time.time() > time(20):
-                await self.update("Вечер")
-                await asyncio.sleep(21600)
-            elif current_time.time() > time(14):
-                await self.update("День")
-                await asyncio.sleep(21600)
-            elif current_time.time() > time(8):
-                await self.update("Утро")
-                await asyncio.sleep(21600)
-    async def update(self, day_part: str):
-        print (len(self.users))
-        if len(self.users) > 0:
-            print("апдейчу")
-            print(self.users)
-            for key in self.users:
-                for value in self.users[key]:
-                    if str(value[1]) ==  day_part:
-                        await self.send_drug_reminder(key, value[0])
-        else:
-            return 
-                    
-    async def time_handler(self, func: Callable) -> None:
-        self.funcs.append(await func)
+    async def update_morning(self):
+        for key in self.users:
+            for value in self.users[key]:
+                if str(value[1]) == "Утро":
+                    await self.bot.send_message(int(key), f"Не забудьте выпить {value[0]}", disable_notification=False) 
+                      
 
  

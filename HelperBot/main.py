@@ -1,13 +1,12 @@
 import logging
-from config import API_TOKEN
+from pathlib import Path
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.dispatcher.filters.state import   State, StatesGroup
 from aiogram.contrib.fsm_storage.files import JSONStorage
 from aiogram.dispatcher import FSMContext
 import weather
-from pathlib import Path
+from config import API_TOKEN
 from btime.time_dispatcher import *
-from threading import Thread
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -23,8 +22,7 @@ class Form(StatesGroup):
 @dp.message_handler(commands=['weather'])
 async def handleWeather(msg: types.Message):
     temperature, feels_like = await weather.get_wheather()
-    await msg.answer(f"Сейчас температура: {round(temperature, 1)}\n Чувствуется как {round(feels_like, 1)}")
-    
+    await msg.answer(f"Сейчас температура: {round(temperature, 1)}\n Чувствуется как {round(feels_like, 1)}")    
     
 @dp.message_handler(commands=['set_drug_helper'])
 async def start_drug_helper(msg: types.Message):
@@ -73,7 +71,15 @@ async def process_drug_name(msg: types.Message, state: FSMContext):
     await msg.reply("Спасибо!")
     state.storage.write(Path("data.json"))
       
-
+@dp.message_handler()
+async def not_handled_message_handler(msg: types.Message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    
+    markup.add("/weather")
+    markup.add("/set_drug_helper")
+    
+    await msg.answer("Вы можете:\n Узнать погодку: /weather\n" +
+                      "Настроить напоминалку: /set_drug_helper", reply_markup=markup)
       
 
 
