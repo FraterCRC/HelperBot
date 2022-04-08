@@ -4,9 +4,10 @@ from config import WHEATHER_TOKEN
 import json
 import logging
 
+
 async def get_wheather() -> Tuple[float, float]:
     async with aiohttp.ClientSession() as session:
-        async with session.get("https://api.openweathermap.org/data/2.5/weather", params={"q":"perm", "appid":WHEATHER_TOKEN }) as resp:
+        async with session.get("https://api.openweathermap.org/data/2.5/weather", params={"q": "perm", "appid": WHEATHER_TOKEN}) as resp:
             logging.debug("weather:Make request: getWeather")
             data = await resp.text()
             data = json.loads(data)
