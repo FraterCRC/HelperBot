@@ -4,12 +4,18 @@ from .drug_helper_handlers import DrugHelper
 from aiogram import Dispatcher
 from utils.time_dispatcher import TimeDispatcher
 from .drug_helper_handlers import Form
+from aiogram.dispatcher import filters
+from .notification_handlers import NotificationHandlers
 
 
 def setup_handlers(dp: Dispatcher, time_dp: TimeDispatcher):
     drug_handlers = DrugHelper(time_dp)
+    notification_handlers = NotificationHandlers(time_dp)
 
     dp.register_message_handler(handleWeather, commands=["weather"])
+
+    dp.register_message_handler(notification_handlers.handle_notification, 
+        regexp='(2[0-3]|[01]?[0-9]):?([0-5]?[0-9])*')
 
     dp.register_message_handler(
         DrugHelper.start_drug_helper, commands=["set_drug_helper"])
